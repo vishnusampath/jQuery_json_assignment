@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Multiseries line chart</title>
+<!--styles to apply for chart -->
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<link rel="stylesheet" type="text/css" href="stylesheet1.css">
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.css">
+
+<script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.js"></script>
+</head>
+<body>
+  <div>
+    <center>
+      <h1>Assault Crimes (2001-2016) Line Chart</h1>
+    </center>
+<div>
+  <table id="jsonTable" class="stripe order-column">
+    <thead>
+
+      <th>Year</th>
+      <th>Arrested</th>
+      <th>Not Arrested</th>
+
+        <th>Click Remove to delete</th>
+    </thead>
+  </table>
+</div>
+<div id="multiline">
+
+</div>
+</div>
+<script>
+var	margin = {top: 30, right: 40, bottom: 30, left: 600},
+	width = 1200 - margin.left - margin.right,
+	height = 270 - margin.top - margin.bottom;
+
+d3.json("assault_crimes.json", function(error, data) {
+
+    drawGraph(data);
+   $('#jsonTable').dataTable({
+      data:data,
+      columns: [
+        { data: "Year" },
+          { data: "arrested" },
+        { data: "notarrested" },
+          {'render': function (data, type, full, meta){
+             return '<a href="#">Remove</a>';
+         }
+       }
+      ]
+
+    });
+
+    var table = $('#jsonTable').DataTable();
+
+$('#jsonTable tbody a').click( function () {
+  var dt=table
+      .row( $(this).parents('tr') ).data();
+
+      data.splice(data.indexOf(dt),1);
+
+    table
+        .row( $(this).parents('tr') )
+        .remove()
+
+        .draw();
+
+        d3.select("svg").remove();
+        drawGraph(data);
+        if(data.length>0){
+
+        console.log(data);
+      }
+} );
+
+});
+<!-- Defining x and y axis domain-->
+function drawGraph(data) {
+
+
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0,width], 0.2,0.2);
+var	y = d3.scale.linear().range([height, 0]);
+
+ var	xAxis = d3.svg.axis().scale(x)
+ 	.orient("bottom");
+
+var	yAxis = d3.svg.axis().scale(y)
+	.orient("left");
+
+var	valueline = d3.svg.line()
+	.x(function(d) { return x(d.Year); })
+	.y(function(d) { return y(d.arrested); });
+
+var	valueline2 = d3.svg.line()
+	.x(function(d) { return x(d.Year); })
+	.y(function(d) { return y(d.notarrested); });
+
+var	svg = d3.select("#multiline")
+	.append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+	.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// Get the data
+data.forEach(function(d) {
+         d.Year = d.Year;
+       d.arrested = +d.arrested;
+       d.notarrested = +d.notarrested;
+
+     });
+
+
+  x.domain(data.map(function(d){
+      return d.Year;
+  }));
+	// Scale the range of the data
+	//x.domain(d3.extent(data, function(d) { return d.Year; }));
+	y.domain([0, d3.max(data, function(d) { return Math.max(d.arrested, d.notarrested); })]);
+
+	svg.append("path")		// Add the valueline path.
+		.attr("class", "line")
+    .style("stroke", "lightseagreen")
+		.attr("d", valueline(data));
+
+	svg.append("path")		// Add the valueline2 path.
+		.attr("class", "line")
+		.style("stroke", "purple")
+		.attr("d", valueline2(data));
+
+
+
+
+	svg.append("g")			// Add the X Axis
+		.attr("class", "x axis")
+		.attr("transform", "translate(0," + height + ")")
+		.call(xAxis);
+
+	svg.append("g")			// Add the Y Axis
+		.attr("class", "y axis")
+		.call(yAxis);
+
+	svg.append("text")
+		.attr("transform", "translate(" + (width+3) + "," + y(data[0].arrested) + ")")
+		.attr("dy", ".35em")
+		.attr("text-anchor", "end")
+		.style("fill", "lightseagreen")
+		.text("Arrested");
+
+	svg.append("text")
+		.attr("transform", "translate(" + (width+3) + "," + y(data[0].notarrested) + ")")
+		.attr("dy", ".35em")
+		.attr("text-anchor", "end")
+		.style("fill", "purple")
+		.text("NotArrested");
+}
+</script>
+</body>
+</html>
